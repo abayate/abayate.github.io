@@ -1,4 +1,4 @@
-// Your Hugging Face API token is now set here.
+// Your Hugging Face API token is already set here.
 const HUGGINGFACE_API_TOKEN = "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";
 
 // Simple function to check if input is a URL.
@@ -10,16 +10,29 @@ function isUrl(input) {
 const chatbotInput = document.getElementById("chatbotInput");
 const chatbotMessages = document.getElementById("chatbotMessages");
 
-chatbotInput.addEventListener("keypress", (event) => {
+// Listen for Enter key using "keydown" event.
+chatbotInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
-    const userText = chatbotInput.value.trim();
-    chatbotInput.value = "";
-    if (userText) {
-      addMessage(userText, "user");
-      processUserMessage(userText);
-    }
+    event.preventDefault(); // Prevent default behavior (like form submission)
+    processInput();
   }
 });
+
+// Fallback: Add a submit button if desired (optional).
+const submitButton = document.createElement("button");
+submitButton.textContent = "Submit";
+submitButton.style.marginTop = "10px";
+submitButton.addEventListener("click", processInput);
+document.querySelector(".chatbot-container").appendChild(submitButton);
+
+function processInput() {
+  const userText = chatbotInput.value.trim();
+  if (userText) {
+    addMessage(userText, "user");
+    chatbotInput.value = "";
+    processUserMessage(userText);
+  }
+}
 
 function addMessage(text, sender) {
   const msgDiv = document.createElement("div");
