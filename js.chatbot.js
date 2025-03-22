@@ -1,36 +1,50 @@
-// Your Hugging Face API token is already set here.
+// Hugging Face API token
 const HUGGINGFACE_API_TOKEN = "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";
 
-// Simple function to check if input is a URL.
-function isUrl(input) {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  return urlRegex.test(input);
-}
+// VirusTotal API key
+const vtApiKey = '4120ac02868cc1d791f749bce058ccbfc7810883f979033369213c4d879a21ad';
 
+// Grab DOM elements
 const chatbotInput = document.getElementById("chatbotInput");
 const chatbotMessages = document.getElementById("chatbotMessages");
+const submitButton = document.getElementById("submitBtn");
 
-// Listen for Enter key using "keydown" event.
+// Listen for the Submit button click
+submitButton.addEventListener("click", () => {
+  processInput();
+});
+
+// Also listen for Enter key in the input
 chatbotInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
-    event.preventDefault(); // Prevent default behavior (like form submission)
+    event.preventDefault();
     processInput();
   }
 });
 
-// Fallback: Add a submit button if desired (optional).
-const submitButton = document.createElement("button");
-submitButton.textContent = "Submit";
-submitButton.style.marginTop = "10px";
-submitButton.addEventListener("click", processInput);
-document.querySelector(".chatbot-container").appendChild(submitButton);
-
 function processInput() {
   const userText = chatbotInput.value.trim();
-  if (userText) {
-    addMessage(userText, "user");
-    chatbotInput.value = "";
-    processUserMessage(userText);
+  if (!userText) return;
+
+  // Show user's message
+  addMessage(userText, "user");
+  chatbotInput.value = "";
+
+  // Check if it's a URL or a normal query
+  if (isUrl(userText)) {
+    checkUrlWithVirusTotal(userText)
+      .then((result) => addMessage(result, "bot"))
+      .catch((err) => {
+        console.error(err);
+        addMessage("Error checking URL. Please try again later.", "bot");
+      });
+  } else {
+    getLLMResponse(userText)
+      .then((response) => addMessage(response, "bot"))
+      .catch((err) => {
+        console.error(err);
+        addMessage("Error retrieving response from Hugging Face.", "bot");
+      });
   }
 }
 
@@ -42,89 +56,76 @@ function addMessage(text, sender) {
   chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
 }
 
-async function processUserMessage(text) {
-  if (isUrl(text)) {
-    // If input is a URL, check its safety using VirusTotal.
-    const safetyResult = await checkUrlWithVirusTotal(text);
-    addMessage(safetyResult, "bot");
-  } else {
-    // Otherwise, get a response from the Hugging Face Inference API.
-    const response = await getLLMResponse(text);
-    addMessage(response, "bot");
-  }
+// Simple URL check
+function isUrl(input) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return urlRegex.test(input);
 }
 
-// Encode URL in Base64 (removing trailing "=") as required by VirusTotal.
+// Encode URL for VirusTotal
 function encodeUrl(url) {
   return btoa(url).replace(/=+$/, "");
 }
 
 async function checkUrlWithVirusTotal(url) {
+  console.log("Checking URL with VirusTotal:", url);
   const encodedUrl = encodeUrl(url);
-  // Insert your VirusTotal API key here.
-  const vtApiKey = '4120ac02868cc1d791f749bce058ccbfc7810883f979033369213c4d879a21ad';
   const endpoint = `https://www.virustotal.com/api/v3/urls/${encodedUrl}`;
 
-  try {
-    const response = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        "x-apikey": vtApiKey
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      "x-apikey": vtApiKey
     }
+  });
 
-    const data = await response.json();
-    const stats = data.data.attributes.last_analysis_stats;
-    if (stats.malicious > 0) {
-      return `Warning: This URL (${url}) is reported as malicious. Do NOT proceed.`;
-    } else {
-      return `This URL (${url}) is not flagged as malicious. Still, stay cautious.`;
-    }
-  } catch (error) {
-    console.error("VirusTotal API error:", error);
-    return "Error checking URL safety. Please try again later.";
+  if (!response.ok) {
+    throw new Error(`VirusTotal error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const stats = data.data.attributes.last_analysis_stats;
+  if (stats.malicious > 0) {
+    return `Warning: This URL (${url}) is reported as malicious. Do NOT proceed.`;
+  } else {
+    return `This URL (${url}) is not flagged as malicious. Still, stay cautious.`;
   }
 }
 
 async function getLLMResponse(userPrompt) {
-  // Build a prompt with context for the model.
+  console.log("Sending prompt to Hugging Face:", userPrompt);
   const prompt = `You are a cybersecurity expert specializing in phishing and URL safety. Answer the following question with detailed, expert advice:
   
 User: ${userPrompt}
   
 Answer:`;
 
-  try {
-    const response = await fetch("https://api-inference.huggingface.co/models/bigscience/bloom", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HUGGINGFACE_API_TOKEN}`
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 150,
-          temperature: 0.7
-        }
-      }),
-    });
-    
-    const data = await response.json();
-    if (Array.isArray(data) && data[0].generated_text) {
-      // Remove the prompt from the output if it appears.
-      return data[0].generated_text.replace(prompt, "").trim();
-    } else if (data.error) {
-      return `Error: ${data.error}`;
-    } else {
-      return "Sorry, I couldn't generate a response.";
-    }
-  } catch (error) {
-    console.error("Hugging Face API error:", error);
-    return "Error retrieving response from Hugging Face.";
+  const response = await fetch("https://api-inference.huggingface.co/models/bigscience/bloom", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${HUGGINGFACE_API_TOKEN}`
+    },
+    body: JSON.stringify({
+      inputs: prompt,
+      parameters: {
+        max_new_tokens: 150,
+        temperature: 0.7
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Hugging Face API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  if (Array.isArray(data) && data[0].generated_text) {
+    // Remove the prompt from the output if it appears
+    return data[0].generated_text.replace(prompt, "").trim();
+  } else if (data.error) {
+    return `Error: ${data.error}`;
+  } else {
+    return "Sorry, I couldn't generate a response.";
   }
 }
