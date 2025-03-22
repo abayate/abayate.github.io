@@ -1,9 +1,9 @@
-// Replace "YOUR_OPENAI_API_KEY" with your actual OpenAI API key if you integrate with an LLM.
-const OPENAI_API_KEY = "YOUR_OPENAI_API_KEY";  
-// URL_CHECK_API is not used in this demo; we integrate directly with VirusTotal.
-const URL_CHECK_API = "";
+// This example no longer uses the OpenAI API; it leverages Hugging Face's Inference API instead.
+// Make sure to obtain a Hugging Face API token and replace "YOUR_HUGGINGFACE_API_TOKEN" with your token.
 
-// A simple function to check if the user input is a URL.
+const HUGGINGFACE_API_TOKEN = "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";
+
+// Simple function to determine if input is a URL.
 function isUrl(input) {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   return urlRegex.test(input);
@@ -33,32 +33,32 @@ function addMessage(text, sender) {
 
 async function processUserMessage(text) {
   if (isUrl(text)) {
-    // If the input is a URL, check its safety using VirusTotal.
+    // Check URL safety using VirusTotal.
     const safetyResult = await checkUrlWithVirusTotal(text);
     addMessage(safetyResult, "bot");
   } else {
-    // Otherwise, give a generic chatbot response.
-    const response = "This is a demo response. For full functionality, integrate with an LLM.";
+    // Otherwise, get a response from the Hugging Face LLM.
+    const response = await getLLMResponse(text);
     addMessage(response, "bot");
   }
 }
 
-// Function to encode a URL in Base64 (as required by VirusTotal) and remove trailing '='.
+// Encode URL in Base64 (remove trailing "=") as required by VirusTotal.
 function encodeUrl(url) {
   return btoa(url).replace(/=+$/, "");
 }
 
 async function checkUrlWithVirusTotal(url) {
   const encodedUrl = encodeUrl(url);
-  // Insert your VirusTotal API key below.
-  const apiKey = '4120ac02868cc1d791f749bce058ccbfc7810883f979033369213c4d879a21ad';
+  // Insert your VirusTotal API key here.
+  const vtApiKey = '4120ac02868cc1d791f749bce058ccbfc7810883f979033369213c4d879a21ad';
   const endpoint = `https://www.virustotal.com/api/v3/urls/${encodedUrl}`;
 
   try {
     const response = await fetch(endpoint, {
       method: "GET",
       headers: {
-        "x-apikey": apiKey
+        "x-apikey": vtApiKey
       }
     });
 
@@ -76,5 +76,45 @@ async function checkUrlWithVirusTotal(url) {
   } catch (error) {
     console.error("VirusTotal API error:", error);
     return "Error checking URL safety. Please try again later.";
+  }
+}
+
+async function getLLMResponse(userPrompt) {
+  // Build the prompt with context.
+  const prompt = `You are a cybersecurity expert specializing in phishing and URL safety. Answer the following question with detailed, expert advice:
+  
+User: ${userPrompt}
+  
+Answer:`;
+
+  try {
+    const response = await fetch("https://api-inference.huggingface.co/models/bigscience/bloom", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${HUGGINGFACE_API_TOKEN}`
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 150,
+          temperature: 0.7
+        }
+      }),
+    });
+    
+    const data = await response.json();
+    // The Hugging Face Inference API typically returns an array with the generated text.
+    if (Array.isArray(data) && data[0].generated_text) {
+      // Remove the prompt from the output if present.
+      return data[0].generated_text.replace(prompt, "").trim();
+    } else if (data.error) {
+      return `Error: ${data.error}`;
+    } else {
+      return "Sorry, I couldn't generate a response.";
+    }
+  } catch (error) {
+    console.error("Hugging Face API error:", error);
+    return "Error retrieving response from Hugging Face.";
   }
 }
