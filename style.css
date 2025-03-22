@@ -1,4 +1,4 @@
-/* Reset & Base Styles */
+/* Basic Reset */
 * {
   margin: 0;
   padding: 0;
@@ -7,16 +7,16 @@
 
 body {
   font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-  background-color: #f9f9f9; /* Light background reminiscent of VirusTotal */
+  background-color: #f9f9f9;
   color: #333;
 }
 
-/* Top Navigation */
+/* Top Navigation (like VirusTotal) */
 .navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #0070f2; /* A bold blue for the nav bar */
+  background-color: #0070f2;
   padding: 10px 20px;
 }
 
@@ -48,7 +48,7 @@ body {
   text-decoration: underline;
 }
 
-/* Hero / Center Section */
+/* Hero Section */
 .hero-section {
   text-align: center;
   padding: 60px 20px;
@@ -96,7 +96,7 @@ body {
   margin-top: 10px;
 }
 
-/* Chat / Results Section */
+/* Chat/Results Section */
 .results-section {
   margin: 40px auto;
   max-width: 800px;
@@ -113,7 +113,7 @@ body {
   padding: 10px;
 }
 
-/* Chat Messages */
+/* Chat Bubbles */
 .user-msg {
   background-color: #e1f0ff;
   padding: 8px 12px;
