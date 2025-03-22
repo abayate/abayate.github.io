@@ -1,9 +1,7 @@
-// This example no longer uses the OpenAI API; it leverages Hugging Face's Inference API instead.
-// Make sure to obtain a Hugging Face API token and replace "YOUR_HUGGINGFACE_API_TOKEN" with your token.
-
+// Your Hugging Face API token is now set here.
 const HUGGINGFACE_API_TOKEN = "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";
 
-// Simple function to determine if input is a URL.
+// Simple function to check if input is a URL.
 function isUrl(input) {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   return urlRegex.test(input);
@@ -33,17 +31,17 @@ function addMessage(text, sender) {
 
 async function processUserMessage(text) {
   if (isUrl(text)) {
-    // Check URL safety using VirusTotal.
+    // If input is a URL, check its safety using VirusTotal.
     const safetyResult = await checkUrlWithVirusTotal(text);
     addMessage(safetyResult, "bot");
   } else {
-    // Otherwise, get a response from the Hugging Face LLM.
+    // Otherwise, get a response from the Hugging Face Inference API.
     const response = await getLLMResponse(text);
     addMessage(response, "bot");
   }
 }
 
-// Encode URL in Base64 (remove trailing "=") as required by VirusTotal.
+// Encode URL in Base64 (removing trailing "=") as required by VirusTotal.
 function encodeUrl(url) {
   return btoa(url).replace(/=+$/, "");
 }
@@ -80,7 +78,7 @@ async function checkUrlWithVirusTotal(url) {
 }
 
 async function getLLMResponse(userPrompt) {
-  // Build the prompt with context.
+  // Build a prompt with context for the model.
   const prompt = `You are a cybersecurity expert specializing in phishing and URL safety. Answer the following question with detailed, expert advice:
   
 User: ${userPrompt}
@@ -104,9 +102,8 @@ Answer:`;
     });
     
     const data = await response.json();
-    // The Hugging Face Inference API typically returns an array with the generated text.
     if (Array.isArray(data) && data[0].generated_text) {
-      // Remove the prompt from the output if present.
+      // Remove the prompt from the output if it appears.
       return data[0].generated_text.replace(prompt, "").trim();
     } else if (data.error) {
       return `Error: ${data.error}`;
