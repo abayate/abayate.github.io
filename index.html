@@ -3,21 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <title>PhishBait Chatbot</title>
-  <link rel="stylesheet" href="css/style.css">
+  <!-- Link to your CSS (see sample below) -->
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <img src="images/phishbait.png" alt="PhishBait Shield Logo" class="logo" />
 
-  <div class="content">
-    <h1>Welcome to PhishBait Chatbot</h1>
-    <p>Ask me about phishing or paste a URL to check if it’s safe.</p>
-  </div>
+  <!-- Top Navigation (similar to VirusTotal’s top bar) -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <!-- Replace with your own logo or text -->
+      <img src="images/phishbait.png" alt="PhishBait Shield Logo" class="nav-logo" />
+      <span class="nav-title">PhishBait</span>
+    </div>
+    <div class="navbar-right">
+      <!-- Example nav links (update or remove as you wish) -->
+      <a href="#">Home</a>
+      <a href="#">Analysis</a>
+      <a href="#">Community</a>
+      <a href="#">Login</a>
+    </div>
+  </nav>
 
-  <div class="chatbot-container">
+  <!-- Hero/Center Section -->
+  <header class="hero-section">
+    <h1>Analyze a URL or Ask About Phishing</h1>
+    <div class="search-bar">
+      <!-- The chatbot input, reminiscent of a search box -->
+      <input
+        id="chatbotInput"
+        class="search-input"
+        type="text"
+        placeholder="Paste a URL or ask a question..."
+      />
+      <button id="submitBtn" class="search-button">Submit</button>
+    </div>
+    <p class="subtext">Powered by VirusTotal checks &amp; Hugging Face LLM</p>
+  </header>
+
+  <!-- Chat/Results Section -->
+  <section class="results-section">
     <div id="chatbotMessages" class="chatbot-messages"></div>
-    <input id="chatbotInput" class="chatbot-input" type="text" placeholder="Type your message here..." />
-  </div>
+  </section>
 
+  <!-- Link to your JS (including the chatbot logic) -->
   <script src="js/chatbot.js"></script>
 </body>
 </html>
